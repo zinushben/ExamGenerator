@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Your Practice Exam</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #0056b3;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            margin: 20px auto;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #007BFF;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Questions Styling */
+        .question {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 5px solid #007BFF;
+            border-radius: 5px;
+        }
+
+        .choices {
+            margin-left: 15px;
+        }
+
+        .choices label {
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+<h1>Practice Exam Generator</h1>
+<div class="container">
+    <div class="intro">
+        <p>Welcome to the <strong>Practice Exam Generator</strong>. Upload your course PDF, and we'll generate a multiple-choice practice exam to help you test your knowledge and prepare effectively.</p>
+    </div>
+
+    <form id="uploadForm" class="upload-section">
+        <label for="pdfFile">Upload a PDF:</label>
+        <input type="file" id="pdfFile" name="file" accept=".pdf" required>
+        <button type="submit">Generate Exam</button>
+        <div class="spinner" id="spinner"></div>
+    </form>
+
+    <div id="questionsContainer"></div>
+    <p id="errorMessage" class="error"></p>
+</div>
+
+<div class="footer">
+    <p>&copy; 2024 Practice Exam Generator. All rights reserved.</p>
+</div>
+
+<script>
+    const form = document.getElementById('uploadForm');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const errorMessage = document.getElementById('errorMessage');
+    const spinner = document.getElementById('spinner');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorMessage.textContent = '';
+        questionsContainer.innerHTML = '';
+        spinner.style.display = 'block'; // Show spinner
+
+        const pdfFile = document.getElementById('pdfFile').files[0];
+        if (!pdfFile) {
+            errorMessage.textContent = "Please upload a PDF file.";
+            spinner.style.display = 'none';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', pdfFile);
+
+        try {
+            const response = await fetch('/exam/generate-from-pdf', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("Invalid response from server.");
+            }
+
+            const questions = await response.json(); // Parse JSON response
+            renderQuestions(questions);
+        } catch (error) {
+            errorMessage.textContent = error.message;
+        } finally {
+            spinner.style.display = 'none'; // Hide spinner
+        }
+    });
+
+    function renderQuestions(questions) {
+        questions.forEach((q, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.classList.add('question');
+            questionDiv.innerHTML = `<strong>${index + 1}. ${q.question}</strong>`;
+
+            const choicesDiv = document.createElement('div');
+            choicesDiv.classList.add('choices');
+
+            q.choices.forEach(choice => {
+                const label = document.createElement('label');
+                label.innerHTML = `
+                <input type="checkbox" value="${choice}">
+                ${choice}
+            `;
+                choicesDiv.appendChild(label);
+            });
+
+            questionDiv.appendChild(choicesDiv);
+            questionsContainer.appendChild(questionDiv);
+        });
+    }
+</script>
+</body>
+</html>
