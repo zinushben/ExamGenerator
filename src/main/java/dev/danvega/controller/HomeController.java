@@ -1,4 +1,4 @@
-package dev.danvega;
+package dev.danvega.controller;
 
 
 import org.springframework.stereotype.Controller;
